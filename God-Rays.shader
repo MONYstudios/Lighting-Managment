@@ -1,4 +1,4 @@
-Shader "Tutorial/GodRaysTest"
+Shader "MONYstudio/GodRaysTest"
 {
     Properties
     {
