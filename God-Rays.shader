@@ -1,4 +1,4 @@
-Shader "MONYstudio/GodRaysTest"
+Shader "Tutorial/GodRaysTest"
 {
     Properties
     {
@@ -42,8 +42,7 @@ Shader "MONYstudio/GodRaysTest"
             float4 _RayColor;
             float _SkyRayAmount;
             
-            // -- Short Description --
-            // Scattering meaning = More Sunlight means more Raystrenght
+           
 
             float Scattering(float angleCos, float g)
             {
@@ -149,13 +148,14 @@ Shader "MONYstudio/GodRaysTest"
                 rays *= factor;
 
                 // Himmel erkennen (keine Geometrie, Tiefe = Far Plane)
-#if UNITY_REVERSED_Z
-    bool isSky = depth <= 0.0001;
-#else
-    bool isSky = depth >= 0.9999;
-#endif
-
-rays *= isSky ? _SkyRayAmount : 1.0;
+                #if UNITY_REVERSED_Z
+                    bool isSky = depth <= 0.0001;
+                #else
+                    bool isSky = depth >= 0.9999;
+                #endif
+                
+                // Kurzform für IF-Statments
+                rays *= isSky ? _SkyRayAmount : 1.0;
 
                 // Hier wird die normale Farbe es Screens mit den God-Rays gemischt
                 // Jedoch funktioniert es nur wenn man es als half4 deklariert und einen Alpha Wert hinzu gibt!
