@@ -3,7 +3,7 @@ Shader "Tutorial/GodRaysTest"
     Properties
     {
         _MaxDistance("Max Distance", Range(10,200)) = 100
-        _Steps("Raymarch Schritte", Range(16,128)) = 64
+        _Steps("Steps", Range(16,64)) = 16
         _Density("Dichte", Range(0,0.1)) = 0.02
         _RayIntensity("Strahl Intensität", Range(0, 2)) = 1
         _ForwardScatter("Vorwärts Streuung (g)", Range(0, 0.99)) = 0.75
@@ -111,8 +111,9 @@ Shader "Tutorial/GodRaysTest"
                 float stepSize = marchDistance / stepCount;
                 
                 // Sagt / Deklariert den dem Compilor das es ein Loop ist
+                // += 2 für bessere Perfromance
                 [loop]
-                for (int i = 0; i < stepCount; i++)
+                for (int i = 0; i < stepCount; i += 2)
                 {
                     // Erstellt eine Variable wo ein neuer Punkt für den Ray berechnet wird
                     // cameraPosition = Startpunkt
@@ -130,7 +131,7 @@ Shader "Tutorial/GodRaysTest"
                     // sun.shadowAttenuation (0 = Schatten, 1 = Licht)
                     // _Density
                     // stepSize
-                    lightAmount += sun.shadowAttenuation * _Density * stepSize;
+                    lightAmount += sun.shadowAttenuation * _Density * stepSize * 2;
                 }
                 
                 // Holt sich das main Light
