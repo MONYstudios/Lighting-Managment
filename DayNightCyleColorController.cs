@@ -1,13 +1,11 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 
 [ExecuteInEditMode]
-public class MoonController : MonoBehaviour
+public class DayNightCyleColorController : MonoBehaviour
 {
     [Header("Settings - References")]
-    [SerializeField] AmbiantController ambiantController;
+    [SerializeField] AmbiantManager ambiantController;
     [SerializeField] Material skyboxRawMaterial;
-    [SerializeField] float transitionSpeed = 2f;
 
     [Header("Settings - SunPresets")]
     [SerializeField] SunPreset sunMorningPreset;
@@ -55,8 +53,6 @@ public class MoonController : MonoBehaviour
 
     void Update()
     {
-      
-
         if (ambiantController.isDay)
         {
             setAmbientDayTime();
