@@ -10,13 +10,12 @@ public class DayNightCyleController : MonoBehaviour
     [SerializeField] float moonSpeed = 1f;
     public float currentRotation;
     [SerializeField] public bool dayNightCyle = false;
-    [SerializeField] public bool nightFogAppeared = false;
     [SerializeField] public bool isMoonFinished = false;
     [SerializeField] float resetSunValue = 0f;
     [SerializeField] int dayLenghtMinutes = 24;
     [SerializeField] AmbiantManager ambiantController;
     [SerializeField] DayNightCyleColorController DayNightCyleColorController;
-    [SerializeField] bool isMoonEnabled = false;
+    bool isDay = false;
 
 
     void Start()
@@ -37,31 +36,28 @@ public class DayNightCyleController : MonoBehaviour
 
     void Update()
     {
+        isDay = ambiantController.isDay;
         sunCyle();
         moonCyle();
     }
     void resetCyle()
     {
-        nightFogAppeared = false;
-        isMoonEnabled = false;
         isMoonFinished = false;
 
         dayNightCyle = true;
-        TimeController.instance.currentHour = 8f;
+        TimeController.instance.setCurrentHour(8);
     }
     void moonCyle()
     {
-        if (!isMoonEnabled) return;
+        if (isDay) return;
 
-        currentRotation = Mathf.MoveTowards(
-            currentRotation,
-            moonMaxRotation,
-            sunSpeed * Time.deltaTime
-        );
+        // Neues Feld oben: [SerializeField] float sunsetHour = 20f;
+        float rotation = (TimeController.instance.getHour() - 20f) * 15f;
+        currentRotation = rotation;
 
-        sun.transform.localRotation = Quaternion.Euler(currentRotation, 0f, 0f);
+        sun.transform.localRotation = Quaternion.Euler(rotation, 90f, 0f);
 
-        if (currentRotation >= moonMaxRotation && !isMoonFinished)
+        if (currentRotation >= sunMaxRotation && !isMoonFinished)
         {
             Debug.Log("Moon is finished!");
             isMoonFinished = true;
@@ -70,27 +66,18 @@ public class DayNightCyleController : MonoBehaviour
 
     void sunCyle()
     {
-        if (!dayNightCyle || isMoonEnabled)
+        if (!dayNightCyle || !isDay)
             return;
 
-        float rotation = (TimeController.instance.currentHour - 8f) * 22.5f;
+        float rotation = (TimeController.instance.getHour() - 8f) * 15f;
 
-        sun.transform.localRotation = Quaternion.Euler(
-            rotation,
-            0f,
-            0f
-        );
-    
-        if (currentRotation >= sunMaxRotation && !nightFogAppeared)
+        sun.transform.localRotation = Quaternion.Euler(rotation, 90f, 0f);
+
+        if (TimeController.instance.getHour() >= 20)
         {
-            nightFogAppeared = true;
-            ambiantController.fogController.NightTimeFog();
-            
             resetSun();
             ambiantController.isDay = false;
-            Debug.Log($"DayNightCyleController: isDay: {ambiantController.isDay}");
-            DayNightCyleColorController.setMoon();
-            isMoonEnabled = true;
+            Debug.Log($"DayNightCyleController: isDay-State: {isDay}");
         }
     }
     void resetSun()
