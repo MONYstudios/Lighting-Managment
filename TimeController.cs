@@ -3,18 +3,21 @@ using UnityEngine;
 
 public class TimeController : MonoBehaviour
 {
-    public static TimeController instance;
-    
     // Setzung des Wertes um Start-Zeit zu definieren
-    public float currentHour = 8f;
-    public bool isTimePaused = false;
+    [SerializeField] float currentHour = 8f;
+    public int morning = 9;
+    public int noon = 12;
+    public int afternoon = 17;
+    public int evening = 19;
+    public int sunset = 20;
+
+    public static TimeController instance;
     [SerializeField] TextMeshProUGUI timeText;
-    
+    public bool isTimePaused = false;
     void Awake()
     {
         instance = this;
     }
-    
     void Update()
     {
         if (isTimePaused) return;
@@ -25,6 +28,14 @@ public class TimeController : MonoBehaviour
         int minutes = Mathf.FloorToInt((currentHour - hours) * 60f);
 
         timeText.text = $"{hours:00}:{minutes:00}";
+    }
 
+    public void setCurrentHour(int value)
+    {
+        currentHour = value;
+    }
+    public float getHour()
+    {
+        return currentHour;
     }
 }
