@@ -1,26 +1,26 @@
-
 using UnityEngine;
 
 public class FogController : MonoBehaviour
 {
+    [Header("Settings - Fog")]
     [SerializeField] FogMode fogMode = FogMode.ExponentialSquared;
-    [SerializeField] float fogDensity = 0.01f;
-    [SerializeField] bool useFog = true;
-    [SerializeField] float fogDensityNight = 0.02f;
     [SerializeField] Color fogColor = Color.gray;
+    [SerializeField] float baseDensity = 1f;         
+    [SerializeField] float transitionSpeed = 0.01f;   
 
-    [SerializeField] bool isDebuggingMode = false;
+    [Header("Settings")]
+    [SerializeField] bool useFog = true;
+    [SerializeField] float nightMultiplier = 2f;
 
-    void Start()
-    {
-        fogDensity = 0f;
-        ApplyFog();
-    }
+    [Header("Fog - Settings")]
+    public bool isFoggyDay = false;
+
+    int morning, noon, afternoon, evening, sunset;
 
     public void EnableFog()
     {
         useFog = true;
-        ApplyFog();
+        RenderSettings.fog = true;
     }
 
     public void DisableFog()
@@ -29,30 +29,53 @@ public class FogController : MonoBehaviour
         RenderSettings.fog = false;
     }
 
+    void GetTime()
+    {
+        var t = TimeController.instance;
+        morning = t.morning;
+        noon = t.noon;
+        afternoon = t.afternoon;
+        evening = t.evening;
+        sunset = t.sunset;
+    }
+
+    void Start()
+    {
+        GetTime();
+
+        RenderSettings.fog = useFog;
+        RenderSettings.fogMode = fogMode;
+        RenderSettings.fogColor = fogColor;
+        RenderSettings.fogDensity = 0.001f; // sicherer Startwert
+    }
+
     void Update()
     {
-        NightTimeFog();
-    }
-    public void ApplyFog()
-    {
-        RenderSettings.fog = useFog;
-
         if (!useFog)
             return;
 
-        RenderSettings.fogColor = fogColor;
-        RenderSettings.fogMode = fogMode;
-        RenderSettings.fogDensity = fogDensity;
+        float hour = TimeController.instance.getHour();
+        float multiplier;
 
-        if (isDebuggingMode)
-            Debug.Log("AmbientController: Fog angewendet!");
+        // Von SPÄT nach FRÜH prüfen
+        if (hour >= sunset) multiplier = 2f;
+        else if (hour >= evening) multiplier = 2f;
+        else if (hour >= afternoon) multiplier = 1.3f;
+        else if (hour >= noon) multiplier = 1.5f;
+        else if (hour >= morning) multiplier = 5000f;   // Test zweck :|
+        else multiplier = nightMultiplier; 
+
+        UpdateFog(multiplier);
     }
-    
-    public void NightTimeFog()
+
+    void UpdateFog(float multiplier)
     {
-        if (TimeController.instance.currentHour >= 9f)
-        {
-            RenderSettings.fogDensity = Mathf.Lerp(RenderSettings.fogDensity,fogDensityNight, Time.deltaTime);   
-        }   
+        if (isFoggyDay)
+            multiplier *= 5f;
+        
+        // Hier wird dividiert weil wir davor zu große Angaben hatten
+        float target = baseDensity * multiplier / 1000f;
+
+        RenderSettings.fogDensity = Mathf.MoveTowards(RenderSettings.fogDensity, target, transitionSpeed * Time.deltaTime);
     }
 }
