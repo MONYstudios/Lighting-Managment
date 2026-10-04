@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[ExecuteInEditMode]
 public class DayNightCyleColorController : MonoBehaviour
 {
     [Header("Settings - References")]
@@ -13,7 +12,6 @@ public class DayNightCyleColorController : MonoBehaviour
     [SerializeField] SunPreset sunAfternoonPreset;
     [SerializeField] SunPreset sunEveningPreset;
     [SerializeField] SunPreset sunsetPreset;
-
 
     [Header("Settings - MoonPresets")]
     [SerializeField] SunPreset MoonPreset;
@@ -35,226 +33,166 @@ public class DayNightCyleColorController : MonoBehaviour
     [Header("Settings - Other")]
     [SerializeField] float replaceRegion = 150f;
     [SerializeField] getMainLightDirection getMainLightDirection;
-    
-    
+    float hour;
+    int morning;
+    int noon;
+    int afternoon;
+    int evening;
+    int sunset;
+
     void Start()
     {
         RenderSettings.skybox = skyboxRawMaterial;
         getMainLightDirection.skyboxMaterial = skyboxRawMaterial;
-        
+
         currentSunPreset = sunMorningPreset;
         currentSkyPreset = skyMorningPreset;
 
         lastSkyPreset = null;
         lastSunPreset = null;
-        setSun();
     }
-
 
     void Update()
     {
-        if (ambiantController.isDay)
-        {
-            setAmbientDayTime();
-            updateSunBasedOnTime();
-            return;
-        }
-        setAmbientNightTime();
+        // Variablen updaten
+        hour = TimeController.instance.getHour();
+
+        morning = TimeController.instance.morning;
+        noon = TimeController.instance.noon;
+        afternoon = TimeController.instance.afternoon;
+        evening = TimeController.instance.evening;
+        sunset = TimeController.instance.sunset;
+
+        // Envirorment setzen
+        updateSun();
+        updateSky();
     }
 
-    public void setMoon()
+
+    void updateSun()
     {
-        skyboxRawMaterial.SetFloat("_SunSize", currentSunPreset.sunSize);
-        skyboxRawMaterial.SetColor("_suncolor", currentSunPreset.sunColor);
-
-        //ambiantController.sunController.currentRotation = 0f;
-
-        // Accutall Light
-        ambiantController.sunController.sun.intensity = currentSunPreset.sunLightIntensity;
-
-    }
-
-    void setSun()
-    {
-        // Helps to block wrong rotations
-        if (ambiantController.sunController.currentRotation >= replaceRegion) return;
-
-        skyboxRawMaterial.SetFloat("_SunSize", currentSunPreset.sunSize);
-        skyboxRawMaterial.SetColor("_suncolor", currentSunPreset.sunColor);
-
-        //ambiantController.sunController.currentRotation = 0f;
-        ambiantController.sunController.sun.intensity = currentSunPreset.sunLightIntensity;
-    }
-
-    void updateSunBasedOnTime()
-    {
-        float rotation = ambiantController.sunController.currentRotation;
-
         Color sunColor;
         float sunLightIntensity;
 
-        lastSunPreset = null;
-        currentSunPreset = sunMorningPreset;
+        updateSunPreset(null, sunMorningPreset);
 
-        if (rotation < 50f)
+        if (hour < noon)
         {
-            currentSunPreset = sunNoonPreset;
-            lastSunPreset = sunMorningPreset;
-
-            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, rotation, 0f, 50f);
+            updateSunPreset(sunMorningPreset, sunNoonPreset);
+            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, hour, morning, noon);
             sunLightIntensity = currentSunPreset.sunLightIntensity;
         }
-
-        else if (rotation < 90f)
+        else if (hour < afternoon)
         {
-            currentSunPreset = sunAfternoonPreset;
-            lastSunPreset = sunNoonPreset;
-
-            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, rotation, 0f, 50f);
+            updateSunPreset(sunNoonPreset, sunAfternoonPreset);
+            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, hour, noon, afternoon);
             sunLightIntensity = currentSunPreset.sunLightIntensity;
         }
-
-        else if (rotation < 150f)
+        else if (hour < evening)
         {
-            currentSunPreset = sunEveningPreset;
-            lastSunPreset = sunAfternoonPreset;
-
-            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, rotation, 0f, 50f);
+            updateSunPreset(sunAfternoonPreset, sunEveningPreset);
+            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, hour, afternoon, evening);
             sunLightIntensity = currentSunPreset.sunLightIntensity;
         }
-
+        else if (hour < sunset)
+        {
+            updateSunPreset(sunEveningPreset, sunsetPreset);
+            sunLightIntensity = currentSunPreset.sunLightIntensity;
+            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, hour, evening, sunset);
+        }
         else
         {
-            currentSunPreset = sunsetPreset;
-            lastSunPreset = sunEveningPreset;
-
+            // MOND
+            updateSunPreset(sunsetPreset, MoonPreset);
             sunLightIntensity = currentSunPreset.sunLightIntensity;
-            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, rotation, 0f, 50f);
+            sunColor = LerpColor(lastSunPreset.sunColor, currentSunPreset.sunColor, hour, sunset, sunset + 2f);
         }
 
         skyboxRawMaterial.SetColor("_suncolor", sunColor);
         ambiantController.sunController.sun.intensity = sunLightIntensity;
     }
 
-    void setAmbientDayTime()
+
+    void updateSky()
     {
-        float rotation = ambiantController.sunController.currentRotation;
+        // standart-Wert
+        updateSkyPreset(null, skyMorningPreset);
 
-        Color skyColor;
-        Color horizontalColor;
-        float starPower;
-        float starIntensity;
+        float start, end;
 
-        lastSkyPreset = null;
-        currentSkyPreset = skyMorningPreset;
-
-        if (rotation < 50f)
+        if (hour < noon)
         {
-            lastSkyPreset = skyMorningPreset;
-            currentSkyPreset = skyNoonPreset;
-
-            skyColor = LerpColor(lastSkyPreset.SkyColor, currentSkyPreset.SkyColor, rotation, 0f, 50f);
-            horizontalColor = LerpColor(lastSkyPreset.HorizonColor, currentSkyPreset.HorizonColor, rotation, 0f, 50f);
-            starIntensity = currentSkyPreset.StarIntensity;
-            starPower = currentSkyPreset.StarPower;
+            updateSkyPreset(skyMorningPreset, skyNoonPreset);
+            start = morning; end = noon;
         }
-
-        else if (rotation < 90f)
+        else if (hour < afternoon)
         {
-            lastSkyPreset = skyNoonPreset;
-            currentSkyPreset = skyAfternoonPreset;
-
-            skyColor = LerpColor(lastSkyPreset.SkyColor, currentSkyPreset.SkyColor, rotation, 50f, 90f);
-            horizontalColor = LerpColor(lastSkyPreset.HorizonColor, currentSkyPreset.HorizonColor, rotation, 50f, 90f);
-
-            starIntensity = currentSkyPreset.StarIntensity;
-            starPower = currentSkyPreset.StarPower;
+            updateSkyPreset(skyNoonPreset, skyAfternoonPreset);
+            start = noon; end = afternoon;
         }
-
-        else if (rotation < 150f)
+        else if (hour < evening)
         {
-            lastSkyPreset = skyAfternoonPreset;
-            currentSkyPreset = skyEveningPreset;
-
-            skyColor = LerpColor(lastSkyPreset.SkyColor, currentSkyPreset.SkyColor, rotation, 90f, 150f);
-            horizontalColor = LerpColor(lastSkyPreset.HorizonColor, currentSkyPreset.HorizonColor, rotation, 90f, 150f);
-            starIntensity = currentSkyPreset.StarIntensity;
-            starPower = currentSkyPreset.StarPower;
+            updateSkyPreset(skyAfternoonPreset, skyEveningPreset);
+            start = afternoon; end = evening;
         }
-
+        else if (hour < sunset)
+        {
+            updateSkyPreset(skyEveningPreset, skySunsetPreset);
+            start = evening; end = sunset;
+        }
         else
         {
-            lastSkyPreset = skyEveningPreset;
-            currentSkyPreset = skySunsetPreset;
-
-            skyColor = LerpColor(lastSkyPreset.SkyColor, currentSkyPreset.SkyColor, rotation, 150f, 200f);
-            horizontalColor = LerpColor(lastSkyPreset.HorizonColor, currentSkyPreset.HorizonColor, rotation, 150f, 200f);
-            starIntensity = currentSkyPreset.StarIntensity;
-            starPower = currentSkyPreset.StarPower;
+            // NACHT
+            updateSkyPreset(skySunsetPreset, skyNightPreset);
+            start = sunset; end = sunset + 2f;
         }
 
-        skyboxRawMaterial.SetColor("_Skycolor", skyColor);
-        skyboxRawMaterial.SetColor("_Horizon_color", horizontalColor);
-
-        skyboxRawMaterial.SetFloat("_StarPower", starPower);
-        skyboxRawMaterial.SetFloat("_StarIntensity", starIntensity);
+        applyPresets(hour, start, end);
     }
 
-    void setAmbientNightTime()
+
+    void updateSunPreset(SunPreset lastPreset, SunPreset currentPreset)
     {
-        float rotation = ambiantController.sunController.currentRotation;
-
-        Color skyColor;
-        Color horizontalColor;
-        
-        lastSkyPreset = skySunsetPreset;
-        currentSkyPreset = skyNightPreset;
-
-        skyColor = LerpColor(lastSkyPreset.SkyColor, currentSkyPreset.SkyColor, rotation, 0f, 20f);
-        horizontalColor = LerpColor(lastSkyPreset.HorizonColor, currentSkyPreset.HorizonColor, rotation, 0f, 20f);
-
-        skyboxRawMaterial.SetColor("_Skycolor", skyColor);
-        skyboxRawMaterial.SetColor("_Horizon_color", horizontalColor);
-
-        currentSunPreset = MoonPreset;
-        lastSunPreset = sunsetPreset;
-        
-        skyboxRawMaterial.SetFloat("_StarPower", currentSkyPreset.StarPower);
-        skyboxRawMaterial.SetFloat("_StarIntensity", currentSkyPreset.StarIntensity);
-        skyboxRawMaterial.SetFloat("_Starheight", currentSkyPreset.StarDistance);
+        Debug.Log($"Old Presets: {lastSunPreset} | {currentSunPreset}");
+        lastSunPreset = lastPreset;
+        currentSunPreset = currentPreset;
+        Debug.Log($"Updated Presets: {lastSunPreset} | {currentSkyPreset}");
     }
     
+    void updateSkyPreset(SkyPreset lastPreset, SkyPreset currentPreset)
+    {
+        Debug.Log($"Old Presets: {lastSkyPreset} | {currentSkyPreset}");
+        lastSkyPreset = lastPreset;
+        currentSkyPreset = currentPreset;
+        Debug.Log($"Updated Presets: {lastSkyPreset} | {currentSkyPreset}");
+    }
+
+    void applyPresets(float rotation, float startRotation, float endrotation)
+    {
+        Color _Skycolor;
+        Color _HorizontalColor;
+
+        float _StarIntesity;
+        float _Starpower;
+
+        _Skycolor = LerpColor(lastSkyPreset.SkyColor, currentSkyPreset.SkyColor, rotation, startRotation, endrotation);
+        _HorizontalColor = LerpColor(lastSkyPreset.HorizonColor, currentSkyPreset.HorizonColor, rotation, startRotation, endrotation);
+
+        _StarIntesity = Mathf.Lerp(lastSkyPreset.StarIntensity, currentSkyPreset.StarIntensity, 5f * Time.deltaTime);
+        _Starpower = Mathf.Lerp(lastSkyPreset.StarPower, currentSkyPreset.StarPower, 5f * Time.deltaTime);
+
+        skyboxRawMaterial.SetColor("_Skycolor", _Skycolor);
+        skyboxRawMaterial.SetColor("_Horizon_color", _HorizontalColor);
+
+        skyboxRawMaterial.SetFloat("_StarPower", _Starpower);
+        skyboxRawMaterial.SetFloat("_StarIntensity", _StarIntesity);
+    }
+
     Color LerpColor(Color from, Color to, float rotation, float startRotation, float endRotation)
     {
         float t = Mathf.InverseLerp(startRotation, endRotation, rotation);
         t = Mathf.SmoothStep(0f, 1f, t);
 
         return Color.Lerp(from, to, t);
-    }
-
-    public void updateSun()
-    {
-        skyboxRawMaterial.SetFloat("_SunSize", currentSunPreset.sunSize);
-        skyboxRawMaterial.SetColor("_suncolor", currentSunPreset.sunColor);
-
-        ambiantController.sunController.sun.transform.localRotation = Quaternion.Euler(ambiantController.sunController.currentRotation, 0f, 0f); ;
-        ambiantController.sunController.sun.intensity = currentSunPreset.sunLightIntensity;
-        setAmbientDayTime();
-    }
-
-    public void updateMoon()
-    {
-        currentSunPreset = MoonPreset;
-        skyboxRawMaterial.SetFloat("_StarPower", currentSkyPreset.StarPower);
-        skyboxRawMaterial.SetFloat("_StarIntensity", currentSkyPreset.StarIntensity);
-        skyboxRawMaterial.SetFloat("_Starheight", currentSkyPreset.StarDistance);
-
-
-        skyboxRawMaterial.SetFloat("_SunSize", currentSunPreset.sunSize);
-        skyboxRawMaterial.SetColor("_suncolor", currentSunPreset.sunColor);
-
-        ambiantController.sunController.sun.transform.localRotation = Quaternion.Euler(ambiantController.sunController.currentRotation, 0f, 0f); ;
-        ambiantController.sunController.sun.intensity = currentSunPreset.sunLightIntensity;
-        setAmbientNightTime();
     }
 }
