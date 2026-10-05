@@ -14,6 +14,7 @@ public class FogController : MonoBehaviour
 
     [Header("Fog - Settings")]
     public bool isFoggyDay = false;
+    public bool isInForest = false;
 
     int morning, noon, afternoon, evening, sunset;
 
@@ -46,7 +47,7 @@ public class FogController : MonoBehaviour
         RenderSettings.fog = useFog;
         RenderSettings.fogMode = fogMode;
         RenderSettings.fogColor = fogColor;
-        RenderSettings.fogDensity = 0.001f; // sicherer Startwert
+        RenderSettings.fogDensity = 0.001f; 
     }
 
     void Update()
@@ -57,12 +58,12 @@ public class FogController : MonoBehaviour
         float hour = TimeController.instance.getHour();
         float multiplier;
 
-        // Von SPÄT nach FRÜH prüfen
+        
         if (hour >= sunset) multiplier = 2f;
         else if (hour >= evening) multiplier = 2f;
         else if (hour >= afternoon) multiplier = 1.3f;
         else if (hour >= noon) multiplier = 1.5f;
-        else if (hour >= morning) multiplier = 5000f;   // Test zweck :|
+        else if (hour >= morning) multiplier = 10f;  
         else multiplier = nightMultiplier; 
 
         UpdateFog(multiplier);
@@ -75,7 +76,8 @@ public class FogController : MonoBehaviour
         
         // Hier wird dividiert weil wir davor zu große Angaben hatten
         float target = baseDensity * multiplier / 1000f;
-
+        if (isInForest)
+            target *= 2.5f;
         RenderSettings.fogDensity = Mathf.MoveTowards(RenderSettings.fogDensity, target, transitionSpeed * Time.deltaTime);
     }
 }
