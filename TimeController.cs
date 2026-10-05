@@ -3,21 +3,26 @@ using UnityEngine;
 
 public class TimeController : MonoBehaviour
 {
-    // Setzung des Wertes um Start-Zeit zu definieren
-    [SerializeField] float currentHour = 8f;
+    
+    
+    [Header("Time Definition")]
     public int morning = 9;
     public int noon = 12;
     public int afternoon = 17;
     public int evening = 19;
     public int sunset = 20;
+    [SerializeField] float currentHour;
 
+    [Header("Settings - Preferences")]
     public static TimeController instance;
     [SerializeField] TextMeshProUGUI timeText;
     public bool isTimePaused = false;
+    
     void Awake()
     {
         instance = this;
     }
+
     void Update()
     {
         if (isTimePaused) return;
@@ -29,10 +34,14 @@ public class TimeController : MonoBehaviour
 
         timeText.text = $"{hours:00}:{minutes:00}";
     }
-
+    
     public void setCurrentHour(int value)
     {
         currentHour = value;
+    }
+    public void setTimePaused(bool value)
+    {
+        isTimePaused = value;
     }
     public float getHour()
     {
