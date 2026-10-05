@@ -4,27 +4,50 @@ using UnityEngine.Rendering.Universal;
 
 public class GodRayController : MonoBehaviour
 {
+    [Header("Godray - Presets")]
     [SerializeField] GodRayPreset morningGodRay;
     [SerializeField] GodRayPreset noonGodRay;
     [SerializeField] GodRayPreset afternoonGodRay;
     [SerializeField] GodRayPreset eveningGodRay;
     [SerializeField] GodRayPreset sunsetGodRay;
+
+    [Header("Godray - Presets State")]
     [SerializeField] GodRayPreset currentPreset;
     [SerializeField] GodRayPreset targetPreset;
+
+    [Header("Settings - References")]
     DayNightCyleController sunController;
     [SerializeField] Material godRayMaterial;
     [SerializeField] UniversalRendererData rendererData;
-    [SerializeField] int morning = 9;
-    [SerializeField] int noon = 11;
-    public TimeController timeController;
     [SerializeField] float speed = 0.5f;
-    
+    float intensityBooster = 1f;
+    float densityBooster = 1f;
+    public float scatteringBooster = 0.5f;
+
+    int morning;
+    int noon;
+    int afternoon;
+    int evening;
+    int sunset;
+
+
+    void GetTime()
+    {
+        var t = TimeController.instance;
+        morning = t.morning;
+        noon = t.noon;
+        afternoon = t.afternoon;
+        evening = t.evening;
+        sunset = t.sunset;
+    }
 
     void Start()
     {
+        GetTime();
+
         currentPreset = morningGodRay;
         targetPreset = morningGodRay;
-        updateFog();
+        updateGodRays();
 
         sunController = GetComponent<DayNightCyleController>();
 
@@ -37,28 +60,87 @@ public class GodRayController : MonoBehaviour
 
     void Update()
     {
-        if (timeController.currentHour <= morning)
+        float hour = TimeController.instance.getHour();
+
+        if (hour >= sunset)
         {
-            if (currentPreset != morningGodRay)
+            if (currentPreset != sunsetGodRay)
             {
-                targetPreset = morningGodRay;
+                targetPreset = sunsetGodRay;
+                currentPreset = targetPreset;
             }
         }
-        else if (timeController.currentHour <= noon)
+        else if (hour >= evening)
+        {
+            if (currentPreset != eveningGodRay)
+            {
+                targetPreset = eveningGodRay;
+                currentPreset = targetPreset;
+            }
+        }
+        else if (hour >= afternoon)
+        {
+            if (currentPreset != afternoonGodRay)
+            {
+                targetPreset = afternoonGodRay;
+                currentPreset = targetPreset;
+            }
+        }
+        else if (hour >= noon)
         {
             if (currentPreset != noonGodRay)
             {
                 targetPreset = noonGodRay;
+                currentPreset = targetPreset;
             }
         }
-        updateFog();
+        else
+        {
+            if (currentPreset != morningGodRay)
+            {
+                targetPreset = morningGodRay;
+                currentPreset = targetPreset;
+            }
+        }
+
+        updateGodRays();
     }
 
-    public void updateFog()
+    public float GetIntensityBooster()
     {
-        float density = Mathf.Lerp(godRayMaterial.GetFloat("_Density"), targetPreset._Density, speed * Time.deltaTime);
-        float rayIntensity = Mathf.Lerp(godRayMaterial.GetFloat("_RayIntensity"), targetPreset._RayIntensity, speed * Time.deltaTime);
-        float forwardScattering = Mathf.Lerp(godRayMaterial.GetFloat("_ForwardScatter"), targetPreset._ForwardScattering, speed * Time.deltaTime);
+        return intensityBooster;
+    }
+
+    public float GetDensityBooster()
+    {
+        return intensityBooster;
+    }
+
+    public void SetIntensityBooster(float value)
+    {
+        intensityBooster = value;
+    }
+
+    public void SetDensityBooster(float value)
+    {
+        densityBooster = value;
+    }
+
+    void OnDisable()
+    {
+        godRayMaterial.SetFloat("_MaxDistance", 16);
+        godRayMaterial.SetFloat("_Steps", 16);
+        godRayMaterial.SetFloat("_Density", 0);
+        godRayMaterial.SetFloat("_RayIntensity", 0);
+        godRayMaterial.SetFloat("_ForwardScatter", 0);
+        godRayMaterial.SetFloat("_SkyRayAmount", 0);
+    }
+    
+    public void updateGodRays()
+    {
+        float density = Mathf.Lerp(godRayMaterial.GetFloat("_Density"), targetPreset._Density * densityBooster, speed * Time.deltaTime);
+        float rayIntensity = Mathf.Lerp(godRayMaterial.GetFloat("_RayIntensity"), targetPreset._RayIntensity * intensityBooster, speed * Time.deltaTime);
+        float forwardScattering = Mathf.Lerp(godRayMaterial.GetFloat("_ForwardScatter"), scatteringBooster, speed * Time.deltaTime);
         float rayOnSky = Mathf.Lerp(godRayMaterial.GetFloat("_SkyRayAmount"), targetPreset._RayOnSky, speed * Time.deltaTime);
         Color rayColor = Color.Lerp(godRayMaterial.GetColor("_RayColor"), targetPreset._RayColor, speed * Time.deltaTime);
 
