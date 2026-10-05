@@ -12,9 +12,7 @@ public class DayNightCyleController : MonoBehaviour
     [SerializeField] public bool dayNightCyle = false;
     [SerializeField] public bool isMoonFinished = false;
     [SerializeField] float resetSunValue = 0f;
-    [SerializeField] int dayLenghtMinutes = 24;
     [SerializeField] AmbiantManager ambiantController;
-    [SerializeField] DayNightCyleColorController DayNightCyleColorController;
     bool isDay = false;
 
 
@@ -26,9 +24,6 @@ public class DayNightCyleController : MonoBehaviour
             Debug.LogError("SunController: Es wurde keine Sonne gefunden!");
             return;
         }
-
-        float distance = Mathf.Abs(sunMaxRotation - resetSunValue);
-        sunSpeed = distance / (dayLenghtMinutes * 60f);
 
         resetSun();
         resetCyle();
@@ -45,23 +40,26 @@ public class DayNightCyleController : MonoBehaviour
         isMoonFinished = false;
 
         dayNightCyle = true;
-        TimeController.instance.setCurrentHour(8);
+        TimeController.instance.setCurrentHour(9);
     }
     void moonCyle()
     {
-        if (isDay) return;
+        if (isDay || isMoonFinished) return;
 
-        // Neues Feld oben: [SerializeField] float sunsetHour = 20f;
+        
         float rotation = (TimeController.instance.getHour() - 20f) * 15f;
         currentRotation = rotation;
 
-        sun.transform.localRotation = Quaternion.Euler(rotation, 90f, 0f);
-
-        if (currentRotation >= sunMaxRotation && !isMoonFinished)
+        if (currentRotation >= moonMaxRotation)
         {
             Debug.Log("Moon is finished!");
             isMoonFinished = true;
+            TimeController.instance.setTimePaused(true);
         }
+
+        sun.transform.localRotation = Quaternion.Euler(rotation, 90f, 0f);
+
+        
     }
 
     void sunCyle()
